@@ -136,5 +136,5 @@ class Scanner(private val source: String) {
 
     private fun Char.isAlpha() = this in 'a'..'z' || this in 'A'..'Z' || this == '_'
 
-    private fun Char.isAlphaOrDigit() = this.isAlpha() || this.isDigit()
+    private fun Char.isAlphaOrDigit() = isAlpha() || isDigit()
 }
