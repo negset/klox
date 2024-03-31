@@ -55,6 +55,8 @@ class Scanner(private val source: String) {
             '/' -> if (match('/')) {
                 // A comment goes until the end of the line.
                 while (peek() != '\n' && !isAtEnd()) advance()
+            } else if (match('*')) {
+                blockComment()
             } else {
                 addToken(TokenType.SLASH)
             }
@@ -71,6 +73,27 @@ class Scanner(private val source: String) {
                 else -> err(line, "Unexpected character.")
             }
         }
+    }
+
+    private fun blockComment() {
+        while (!(peek() == '*' && peekNext() == '/') && !isAtEnd()) {
+            // nested block comment.
+            if (peek() == '/' && peekNext() == '*') {
+                advance()
+                advance()
+                blockComment()
+            } else if (peek() == '\n') line++
+            advance()
+        }
+
+        if (isAtEnd()) {
+            err(line, "Unterminated comment.")
+            return
+        }
+
+        // The closing "*/".
+        advance()
+        advance()
     }
 
     private fun string() {

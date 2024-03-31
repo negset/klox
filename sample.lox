@@ -1,1 +1,17 @@
-print "hello"
+print /* inline block comment */ "inline"
+
+/* single line block comment */
+print "single line"
+
+/*
+ * multiline block comment
+ */
+print "multiline"
+
+/*
+ outer block comment
+ /*
+  * nested block comment
+  */
+ */
+print "nested"
