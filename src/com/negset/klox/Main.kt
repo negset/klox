@@ -47,17 +47,26 @@ fun runPrompt() {
 fun runSource(source: String) {
     val scanner = Scanner(source)
     val tokens = scanner.scanTokens()
+    val parser = Parser(tokens)
+    val expression = parser.parse()
 
-    for (token in tokens) {
-        println(token)
-    }
-}
+    // Stop if there was a syntax error.
+    if (hadError) return
 
-fun err(line: Int, message: String) {
-    report(line, "", message)
+    println(AstPrinter().print(expression!!))
 }
 
 fun report(line: Int, where: String, message: String) {
     System.err.println("[line $line] Error$where: $message")
     hadError = true
+}
+
+fun loxErr(line: Int, message: String) = report(line, "", message)
+
+fun loxErr(token: Token, message: String) {
+    if (token.type == TokenType.EOF) {
+        report(token.line, " at end", message)
+    } else {
+        report(token.line, " at '${token.lexeme}'", message)
+    }
 }

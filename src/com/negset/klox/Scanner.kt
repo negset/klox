@@ -68,7 +68,7 @@ class Scanner(private val source: String) {
             else -> when {
                 c.isDigit() -> number()
                 c.isAlpha() -> identifier()
-                else -> err(line, "Unexpected character.")
+                else -> loxErr(line, "Unexpected character.")
             }
         }
     }
@@ -80,7 +80,7 @@ class Scanner(private val source: String) {
         }
 
         if (isAtEnd()) {
-            err(line, "Unterminated string.")
+            loxErr(line, "Unterminated string.")
             return
         }
 
