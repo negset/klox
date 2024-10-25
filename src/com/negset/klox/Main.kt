@@ -9,7 +9,9 @@ import java.nio.file.Paths
 import java.util.*
 import kotlin.system.exitProcess
 
+val interpreter = Interpreter()
 var hadError = false
+var hadRuntimeError = false
 
 fun main(args: Array<String>) {
     if (args.size > 1) {
@@ -29,6 +31,7 @@ fun runFile(path: String) {
 
     // Indicate an error in the exit code.
     if (hadError) exitProcess(65)
+    if (hadRuntimeError) exitProcess(70)
 }
 
 @Throws(IOException::class)
@@ -53,7 +56,7 @@ fun runSource(source: String) {
     // Stop if there was a syntax error.
     if (hadError) return
 
-    println(AstPrinter().print(expression!!))
+    interpreter.interpret(expression!!)
 }
 
 fun report(line: Int, where: String, message: String) {
@@ -61,12 +64,19 @@ fun report(line: Int, where: String, message: String) {
     hadError = true
 }
 
-fun loxErr(line: Int, message: String) = report(line, "", message)
+fun loxError(line: Int, message: String) = report(line, "", message)
 
-fun loxErr(token: Token, message: String) {
+fun loxError(token: Token, message: String) {
     if (token.type == TokenType.EOF) {
         report(token.line, " at end", message)
     } else {
         report(token.line, " at '${token.lexeme}'", message)
     }
+}
+
+class RuntimeError(val token: Token, message: String) : RuntimeException(message)
+
+fun runtimeError(error: RuntimeError) {
+    println("${error.message}\n[line ${error.token.line}]")
+    hadRuntimeError = true
 }
