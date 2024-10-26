@@ -7,12 +7,47 @@ class Parser(private val tokens: List<Token>) {
 
     private class ParseError : RuntimeException()
 
-    fun parse(): Expr? {
+    fun parse(): List<Stmt> {
+        val statements = mutableListOf<Stmt>()
+        while (!isAtEnd()) {
+            declaration()?.let { statements += it }
+        }
+
+        return statements
+    }
+
+    private fun declaration(): Stmt? {
         return try {
-            expression()
-        } catch (_: ParseError) {
+            if (match(VAR)) varDeclaration()
+            else statement()
+        } catch (error: ParseError) {
+            synchronize()
             null
         }
+    }
+
+    private fun varDeclaration(): Stmt {
+        val name = consume(IDENTIFIER, "Expect variable name.")
+        val initializer = if (match(EQUAL)) expression() else null
+        consume(SEMICOLON, "Expect ';' after variable declaration.")
+        return Var(name, initializer)
+    }
+
+    private fun statement(): Stmt {
+        return if (match(PRINT)) printStatement()
+        else expressionStatement()
+    }
+
+    private fun printStatement(): Stmt {
+        val value = expression()
+        consume(SEMICOLON, "Expect ';' after value.")
+        return Print(value)
+    }
+
+    private fun expressionStatement(): Stmt {
+        val expr = expression()
+        consume(SEMICOLON, "Expect ';' after expression.")
+        return Expression(expr)
     }
 
     private fun expression(): Expr {
@@ -77,21 +112,23 @@ class Parser(private val tokens: List<Token>) {
     }
 
     private fun primary(): Expr {
-        when {
-            match(FALSE) -> return Literal(false)
-            match(TRUE) -> return Literal(true)
-            match(NIL) -> return Literal(null)
+        return when {
+            match(FALSE) -> Literal(false)
+            match(TRUE) -> Literal(true)
+            match(NIL) -> Literal(null)
 
-            match(NUMBER, STRING) -> return Literal(previous().literal)
+            match(NUMBER, STRING) -> Literal(previous().literal)
+
+            match(IDENTIFIER) -> Variable(previous())
 
             match(LEFT_PAREN) -> {
                 val expr = expression()
                 consume(RIGHT_PAREN, "Expect ')' after expression.")
-                return Grouping(expr)
+                Grouping(expr)
             }
-        }
 
-        throw parseErr(peek(), "Expect expression.")
+            else -> throw parseError(peek(), "Expect expression.")
+        }
     }
 
     private fun match(vararg types: TokenType): Boolean {
@@ -108,7 +145,7 @@ class Parser(private val tokens: List<Token>) {
     private fun consume(type: TokenType, message: String): Token {
         if (checkType(type)) return advance()
 
-        throw parseErr(peek(), message)
+        throw parseError(peek(), message)
     }
 
     private fun checkType(type: TokenType): Boolean {
@@ -127,7 +164,7 @@ class Parser(private val tokens: List<Token>) {
 
     private fun previous() = tokens[current - 1]
 
-    private fun parseErr(token: Token, message: String): ParseError {
+    private fun parseError(token: Token, message: String): ParseError {
         loxError(token, message)
         return ParseError()
     }

@@ -2,11 +2,14 @@ package com.negset.klox
 
 import com.negset.klox.TokenType.*
 
-class Interpreter : Expr.Visitor<Any?> {
-    fun interpret(expr: Expr) {
+class Interpreter : Expr.Visitor<Any?>, Stmt.Visitor<Unit> {
+    private val environment = Environment()
+
+    fun interpret(statements: List<Stmt>) {
         try {
-            val value = evaluate(expr)
-            println(stringify(value))
+            statements.forEach {
+                execute(it)
+            }
         } catch (error: RuntimeError) {
             runtimeError(error)
         }
@@ -89,6 +92,10 @@ class Interpreter : Expr.Visitor<Any?> {
         }
     }
 
+    override fun visitVariableExpr(expr: Variable): Any? {
+        return environment.get(expr.name)
+    }
+
     private fun evaluate(expr: Expr): Any? {
         return expr.accept(this)
     }
@@ -113,7 +120,25 @@ class Interpreter : Expr.Visitor<Any?> {
     private fun stringify(value: Any?) = when (value) {
         null -> "nil"
         is Double -> value.toString().removeSuffix(".0")
-        is String -> "\"$value\""
+        is String -> value
         else -> value.toString()
+    }
+
+    override fun visitExpressionStmt(stmt: Expression) {
+        evaluate(stmt.expression)
+    }
+
+    override fun visitPrintStmt(stmt: Print) {
+        val value = evaluate(stmt.expression)
+        println(stringify(value))
+    }
+
+    override fun visitVarStmt(stmt: Var) {
+        val value = stmt.initializer?.let { evaluate(it) }
+        environment.define(stmt.name.lexeme, value)
+    }
+
+    private fun execute(stmt: Stmt) {
+        stmt.accept(this)
     }
 }
