@@ -17,12 +17,12 @@ class Parser(private val tokens: List<Token>) {
     }
 
     private fun declaration(): Stmt? {
-        return try {
-            if (match(VAR)) varDeclaration()
+        try {
+            return if (match(VAR)) varDeclaration()
             else statement()
         } catch (error: ParseError) {
             synchronize()
-            null
+            return null
         }
     }
 
@@ -34,14 +34,28 @@ class Parser(private val tokens: List<Token>) {
     }
 
     private fun statement(): Stmt {
-        return if (match(PRINT)) printStatement()
-        else expressionStatement()
+        return when {
+            match(PRINT) -> printStatement()
+            match(LEFT_BRACE) -> Block(block())
+            else -> expressionStatement()
+        }
     }
 
     private fun printStatement(): Stmt {
         val value = expression()
         consume(SEMICOLON, "Expect ';' after value.")
         return Print(value)
+    }
+
+    private fun block(): List<Stmt> {
+        val statements = mutableListOf<Stmt>()
+
+        while (!checkType(RIGHT_BRACE) && !isAtEnd()) {
+            declaration()?.let { statements += it }
+        }
+
+        consume(RIGHT_BRACE, "Expect '}' after block.")
+        return statements
     }
 
     private fun expressionStatement(): Stmt {
@@ -51,7 +65,25 @@ class Parser(private val tokens: List<Token>) {
     }
 
     private fun expression(): Expr {
-        return equality()
+        return assignment()
+    }
+
+    @Suppress("ThrowableNotThrown")
+    private fun assignment(): Expr {
+        val expr = equality()
+
+        if (match(EQUAL)) {
+            val equal = previous()
+            val value = assignment()
+
+            if (expr is Variable) {
+                return Assign(expr.name, value)
+            }
+
+            parseError(equal, "Invalid assignment target.")
+        }
+
+        return expr
     }
 
     private fun equality(): Expr {

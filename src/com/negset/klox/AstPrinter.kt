@@ -1,8 +1,14 @@
 package com.negset.klox
 
-class AstPrinter : Expr.Visitor<String> {
-    fun print(expr: Expr): String {
-        return expr.accept(this)
+class AstPrinter : Expr.Visitor<String>, Stmt.Visitor<String> {
+    fun print(statements: List<Stmt>) {
+        statements.forEach {
+            println(it.accept(this))
+        }
+    }
+
+    override fun visitAssignExpr(expr: Assign): String {
+        return parenthesize("assign ${expr.name.lexeme}", expr.value)
     }
 
     override fun visitBinaryExpr(expr: Binary): String {
@@ -22,27 +28,45 @@ class AstPrinter : Expr.Visitor<String> {
     }
 
     override fun visitVariableExpr(expr: Variable): String {
-        TODO("Not yet implemented")
+        return expr.name.lexeme
+    }
+
+    override fun visitBlockStmt(stmt: Block): String {
+        return StringBuilder().run {
+            append("[ block\n")
+            stmt.statements.forEach {
+                append(it.accept(this@AstPrinter))
+                append("\n")
+            }
+            append("]")
+            toString()
+        }
+    }
+
+    override fun visitExpressionStmt(stmt: Expression): String {
+        return parenthesize("expr", stmt.expression)
+    }
+
+    override fun visitPrintStmt(stmt: Print): String {
+        return parenthesize("print", stmt.expression)
+    }
+
+    override fun visitVarStmt(stmt: Var): String {
+        return if (stmt.initializer == null)
+            parenthesize("var ${stmt.name.lexeme}")
+        else
+            parenthesize("var ${stmt.name.lexeme}", stmt.initializer)
     }
 
     private fun parenthesize(name: String, vararg exprs: Expr): String {
         return StringBuilder().run {
             append("(").append(name)
-            for (expr in exprs) {
+            exprs.forEach {
                 append(" ")
-                append(expr.accept(this@AstPrinter))
+                append(it.accept(this@AstPrinter))
             }
             append(")")
             toString()
         }
     }
-}
-
-fun main() {
-    val expression = Binary(
-        Unary(Token(TokenType.MINUS, "-", null, 1), Literal(123)),
-        Token(TokenType.STAR, "*", null, 1),
-        Grouping(Literal(45.67))
-    )
-    println(AstPrinter().print(expression))
 }

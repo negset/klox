@@ -3,16 +3,20 @@ package com.negset.klox
 import com.negset.klox.TokenType.*
 
 class Interpreter : Expr.Visitor<Any?>, Stmt.Visitor<Unit> {
-    private val environment = Environment()
+    private var environment = Environment()
 
     fun interpret(statements: List<Stmt>) {
         try {
-            statements.forEach {
-                execute(it)
-            }
+            statements.forEach(::execute)
         } catch (error: RuntimeError) {
             runtimeError(error)
         }
+    }
+
+    override fun visitAssignExpr(expr: Assign): Any? {
+        val value = evaluate(expr.value)
+        environment.assign(expr.name, value)
+        return value
     }
 
     override fun visitBinaryExpr(expr: Binary): Any? {
@@ -124,6 +128,10 @@ class Interpreter : Expr.Visitor<Any?>, Stmt.Visitor<Unit> {
         else -> value.toString()
     }
 
+    override fun visitBlockStmt(stmt: Block) {
+        executeBlock(stmt.statements, Environment(environment))
+    }
+
     override fun visitExpressionStmt(stmt: Expression) {
         evaluate(stmt.expression)
     }
@@ -140,5 +148,15 @@ class Interpreter : Expr.Visitor<Any?>, Stmt.Visitor<Unit> {
 
     private fun execute(stmt: Stmt) {
         stmt.accept(this)
+    }
+
+    private fun executeBlock(statements: List<Stmt>, environment: Environment) {
+        val previous = this.environment
+        try {
+            this.environment = environment
+            statements.forEach(::execute)
+        } finally {
+            this.environment = previous
+        }
     }
 }
