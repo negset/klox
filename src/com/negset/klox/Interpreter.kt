@@ -162,7 +162,7 @@ class Interpreter : Expr.Visitor<Any?>, Stmt.Visitor<Unit> {
     }
 
     override fun visitVarStmt(stmt: Var) {
-        val value = stmt.initializer?.let { evaluate(it) }
+        val value = stmt.initializer?.let(::evaluate)
         environment.define(stmt.name.lexeme, value)
     }
 
