@@ -35,16 +35,72 @@ class Parser(private val tokens: List<Token>) {
 
     private fun statement(): Stmt {
         return when {
+            match(FOR) -> forStatement()
+            match(IF) -> ifStatement()
             match(PRINT) -> printStatement()
+            match(WHILE) -> whileStatement()
             match(LEFT_BRACE) -> Block(block())
             else -> expressionStatement()
         }
+    }
+
+    private fun forStatement(): Stmt {
+        consume(LEFT_PAREN, "Expect '(' after 'for'.")
+        val initializer = when {
+            match(SEMICOLON) -> null
+            match(VAR) -> varDeclaration()
+            else -> expressionStatement()
+        }
+
+        val condition =
+            if (!checkType(SEMICOLON)) expression()
+            else Literal(true)
+        consume(SEMICOLON, "Expect ';' after for condition.")
+
+        val increment =
+            if (!checkType(RIGHT_PAREN)) expression()
+            else null
+        consume(RIGHT_PAREN, "Expect ')' after for clauses.")
+
+        var body = statement()
+
+        increment?.let {
+            body = Block(listOf(body, Expression(it)))
+        }
+
+        body = While(condition, body)
+
+        initializer?.let {
+            body = Block(listOf(it, body))
+        }
+
+        return body
+    }
+
+    private fun ifStatement(): Stmt {
+        consume(LEFT_PAREN, "Expect '(' after 'if'.")
+        val condition = expression()
+        consume(RIGHT_PAREN, "Expect ')' after if condition.")
+
+        val thenBranch = statement()
+        val elseBranch = if (match(ELSE)) statement() else null
+
+        return If(condition, thenBranch, elseBranch)
     }
 
     private fun printStatement(): Stmt {
         val value = expression()
         consume(SEMICOLON, "Expect ';' after value.")
         return Print(value)
+    }
+
+    private fun whileStatement(): Stmt {
+        consume(LEFT_PAREN, "Expect '(' after 'while'.")
+        val condition = expression()
+        consume(RIGHT_PAREN, "Expect ')' after while condition.")
+        val body = statement()
+
+        return While(condition, body)
     }
 
     private fun block(): List<Stmt> {
@@ -70,7 +126,7 @@ class Parser(private val tokens: List<Token>) {
 
     @Suppress("ThrowableNotThrown")
     private fun assignment(): Expr {
-        val expr = equality()
+        val expr = or()
 
         if (match(EQUAL)) {
             val equal = previous()
@@ -81,6 +137,30 @@ class Parser(private val tokens: List<Token>) {
             }
 
             parseError(equal, "Invalid assignment target.")
+        }
+
+        return expr
+    }
+
+    private fun or(): Expr {
+        var expr = and()
+
+        while (match(OR)) {
+            val operator = previous()
+            val right = and()
+            expr = Logical(expr, operator, right)
+        }
+
+        return expr
+    }
+
+    private fun and(): Expr {
+        var expr = equality()
+
+        while (match(AND)) {
+            val operator = previous()
+            val right = equality()
+            expr = Logical(expr, operator, right)
         }
 
         return expr

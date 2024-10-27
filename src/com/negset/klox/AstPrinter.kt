@@ -23,6 +23,10 @@ class AstPrinter : Expr.Visitor<String>, Stmt.Visitor<String> {
         return expr.value?.toString() ?: "nil"
     }
 
+    override fun visitLogicalExpr(expr: Logical): String {
+        return parenthesize(expr.operator.lexeme, expr.left, expr.right)
+    }
+
     override fun visitUnaryExpr(expr: Unary): String {
         return parenthesize(expr.operator.lexeme, expr.right)
     }
@@ -33,18 +37,34 @@ class AstPrinter : Expr.Visitor<String>, Stmt.Visitor<String> {
 
     override fun visitBlockStmt(stmt: Block): String {
         return StringBuilder().run {
-            append("[ block\n")
+            append("( block\n")
             stmt.statements.forEach {
                 append(it.accept(this@AstPrinter))
                 append("\n")
             }
-            append("]")
+            append(")")
             toString()
         }
     }
 
     override fun visitExpressionStmt(stmt: Expression): String {
         return parenthesize("expr", stmt.expression)
+    }
+
+    override fun visitIfStmt(stmt: If): String {
+        return StringBuilder().run {
+            append("(if ")
+            append(stmt.condition.accept(this@AstPrinter))
+            append("\n")
+            append(stmt.thenBranch.accept(this@AstPrinter))
+            append("\n")
+            if (stmt.elseBranch != null) {
+                append("else\n")
+                append(stmt.elseBranch.accept(this@AstPrinter))
+            }
+            append(")")
+            toString()
+        }
     }
 
     override fun visitPrintStmt(stmt: Print): String {
@@ -56,6 +76,17 @@ class AstPrinter : Expr.Visitor<String>, Stmt.Visitor<String> {
             parenthesize("var ${stmt.name.lexeme}")
         else
             parenthesize("var ${stmt.name.lexeme}", stmt.initializer)
+    }
+
+    override fun visitWhileStmt(stmt: While): String {
+        return StringBuilder().run {
+            append("(while ")
+            append(stmt.condition.accept(this@AstPrinter))
+            append("\n")
+            append(stmt.body.accept(this@AstPrinter))
+            append(")")
+            toString()
+        }
     }
 
     private fun parenthesize(name: String, vararg exprs: Expr): String {

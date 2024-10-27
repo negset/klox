@@ -57,6 +57,7 @@ fun runSource(source: String) {
     if (hadError) return
 
     interpreter.interpret(statements)
+//    AstPrinter().print(statements)
 }
 
 fun report(line: Int, where: String, message: String) {

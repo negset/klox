@@ -82,6 +82,18 @@ class Interpreter : Expr.Visitor<Any?>, Stmt.Visitor<Unit> {
         return expr.value
     }
 
+    override fun visitLogicalExpr(expr: Logical): Any? {
+        val left = evaluate(expr.left)
+
+        when (expr.operator.type) {
+            OR -> if (isTruthy(left)) return left
+            AND -> if (!isTruthy(left)) return left
+            else -> return null     // Unreachable.
+        }
+
+        return evaluate(expr.right)
+    }
+
     override fun visitUnaryExpr(expr: Unary): Any? {
         val right = evaluate(expr.right)
 
@@ -92,7 +104,7 @@ class Interpreter : Expr.Visitor<Any?>, Stmt.Visitor<Unit> {
                 -(right as Double)
             }
 
-            else -> null
+            else -> null    // Unreachable.
         }
     }
 
@@ -136,6 +148,14 @@ class Interpreter : Expr.Visitor<Any?>, Stmt.Visitor<Unit> {
         evaluate(stmt.expression)
     }
 
+    override fun visitIfStmt(stmt: If) {
+        if (isTruthy(evaluate(stmt.condition))) {
+            execute(stmt.thenBranch)
+        } else {
+            stmt.elseBranch?.let(::execute)
+        }
+    }
+
     override fun visitPrintStmt(stmt: Print) {
         val value = evaluate(stmt.expression)
         println(stringify(value))
@@ -144,6 +164,12 @@ class Interpreter : Expr.Visitor<Any?>, Stmt.Visitor<Unit> {
     override fun visitVarStmt(stmt: Var) {
         val value = stmt.initializer?.let { evaluate(it) }
         environment.define(stmt.name.lexeme, value)
+    }
+
+    override fun visitWhileStmt(stmt: While) {
+        while (isTruthy(evaluate(stmt.condition))) {
+            execute(stmt.body)
+        }
     }
 
     private fun execute(stmt: Stmt) {
