@@ -16,7 +16,7 @@ class AstPrinter : Expr.Visitor<String>, Stmt.Visitor<String> {
     }
 
     override fun visitCallExpr(expr: Call): String {
-        TODO("Not yet implemented")
+        return parenthesize("call", expr.callee, *expr.arguments.toTypedArray())
     }
 
     override fun visitGroupingExpr(expr: Grouping): String {
@@ -41,7 +41,7 @@ class AstPrinter : Expr.Visitor<String>, Stmt.Visitor<String> {
 
     override fun visitBlockStmt(stmt: Block): String {
         return StringBuilder().run {
-            append("( block\n")
+            append("(block\n")
             stmt.statements.forEach {
                 append(it.accept(this@AstPrinter))
                 append("\n")
@@ -56,7 +56,14 @@ class AstPrinter : Expr.Visitor<String>, Stmt.Visitor<String> {
     }
 
     override fun visitFunctionStmt(stmt: Function): String {
-        TODO("Not yet implemented")
+        return StringBuilder().run {
+            append("(fun ${stmt.name.lexeme} ")
+            stmt.params.forEach { append(it.lexeme + " ") }
+            append("\n")
+            stmt.body.forEach { append(it.accept(this@AstPrinter) + "\n") }
+            append(")")
+            toString()
+        }
     }
 
     override fun visitIfStmt(stmt: If): String {
@@ -80,7 +87,10 @@ class AstPrinter : Expr.Visitor<String>, Stmt.Visitor<String> {
     }
 
     override fun visitReturnStmt(stmt: Return): String {
-        TODO("Not yet implemented")
+        return if (stmt.value != null)
+            parenthesize(stmt.keyword.lexeme, stmt.value)
+        else
+            parenthesize(stmt.keyword.lexeme)
     }
 
     override fun visitVarStmt(stmt: Var): String {
