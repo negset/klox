@@ -107,12 +107,33 @@ class Interpreter : Expr.Visitor<Any?>, Stmt.Visitor<Unit> {
         return callee.call(this, arguments)
     }
 
+    override fun visitGetExpr(expr: Get): Any? {
+        val obj = evaluate(expr.obj)
+        if (obj is LoxInstance) {
+            return obj[expr.name]
+        }
+
+        throw RuntimeError(expr.name, "Only instances have properties.")
+    }
+
     override fun visitGroupingExpr(expr: Grouping): Any? {
         return evaluate(expr.expression)
     }
 
     override fun visitLiteralExpr(expr: Literal): Any? {
         return expr.value
+    }
+
+    override fun visitSetExpr(expr: Set): Any? {
+        val obj = evaluate(expr.obj)
+
+        if (obj !is LoxInstance) {
+            throw RuntimeError(expr.name, "Only instances have fields.")
+        }
+
+        val value = evaluate(expr.value)
+        obj[expr.name] = value
+        return value
     }
 
     override fun visitLogicalExpr(expr: Logical): Any? {
@@ -184,6 +205,12 @@ class Interpreter : Expr.Visitor<Any?>, Stmt.Visitor<Unit> {
 
     override fun visitBlockStmt(stmt: Block) {
         executeBlock(stmt.statements, Environment(environment))
+    }
+
+    override fun visitClassStmt(stmt: Class) {
+        environment.define(stmt.name.lexeme, null)
+        val cls = LoxClass(stmt.name.lexeme)
+        environment.assign(stmt.name, cls)
     }
 
     override fun visitExpressionStmt(stmt: Expression) {

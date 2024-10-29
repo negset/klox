@@ -17,8 +17,10 @@ fun main(args: Array<String>) {
             "Assign   | name: Token, value: Expr",
             "Binary   | left: Expr, operator: Token, right: Expr",
             "Call     | callee: Expr, paren: Token, arguments: List<Expr>",
+            "Get      | obj: Expr, name: Token",
             "Grouping | expression: Expr",
             "Literal  | value: Any?",
+            "Set      | obj: Expr, name: Token, value: Expr",
             "Logical  | left: Expr, operator: Token, right: Expr",
             "Unary    | operator: Token, right: Expr",
             "Variable | name: Token",
@@ -28,6 +30,7 @@ fun main(args: Array<String>) {
     defineAst(
         outputDir, "Stmt", listOf(
             "Block      | statements: List<Stmt>",
+            "Class      | name: Token, methods: List<Function>",
             "Expression | expression: Expr",
             "Function   | name: Token, params: List<Token>, body: List<Stmt>",
             "If         | condition: Expr, thenBranch: Stmt, elseBranch: Stmt?",

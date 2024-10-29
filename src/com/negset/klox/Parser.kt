@@ -19,6 +19,7 @@ class Parser(private val tokens: List<Token>) {
     private fun declaration(): Stmt? {
         try {
             return when {
+                match(CLASS) -> classDeclaration()
                 match(FUN) -> function("function")
                 match(VAR) -> varDeclaration()
                 else -> statement()
@@ -29,8 +30,22 @@ class Parser(private val tokens: List<Token>) {
         }
     }
 
+    private fun classDeclaration(): Stmt {
+        val name = consume(IDENTIFIER, "Expect class name.")
+        consume(LEFT_BRACE, "Expect '{' before class body.")
+
+        val methods = mutableListOf<Function>()
+        while (!checkType(RIGHT_BRACE) && !isAtEnd()) {
+            methods.add(function("method"))
+        }
+
+        consume(RIGHT_BRACE, "Expect '}' after class body.")
+
+        return Class(name, methods)
+    }
+
     @Suppress("ThrowableNotThrown")
-    private fun function(kind: String): Stmt {
+    private fun function(kind: String): Function {
         val name = consume(IDENTIFIER, "Expect $kind name.")
         consume(LEFT_PAREN, "Expect '(' after $kind name.")
         val parameters = mutableListOf<Token>()
@@ -164,11 +179,16 @@ class Parser(private val tokens: List<Token>) {
             val equal = previous()
             val value = assignment()
 
-            if (expr is Variable) {
-                return Assign(expr.name, value)
-            }
+            when (expr) {
+                is Variable -> {
+                    return Assign(expr.name, value)
+                }
+                is Get -> {
+                    return Set(expr.obj, expr.name, value)
+                }
 
-            parseError(equal, "Invalid assignment target.")
+                else -> parseError(equal, "Invalid assignment target.")
+            }
         }
 
         return expr
@@ -259,10 +279,17 @@ class Parser(private val tokens: List<Token>) {
         var expr = primary()
 
         while (true) {
-            if (match(LEFT_PAREN)) {
-                expr = finishCall(expr)
-            } else {
-                break
+            when {
+                match(LEFT_PAREN) -> {
+                    expr = finishCall(expr)
+                }
+                match(DOT) -> {
+                    val name = consume(IDENTIFIER, "Expect property name after '.'.")
+                    expr = Get(expr, name)
+                }
+                else -> {
+                    break
+                }
             }
         }
 

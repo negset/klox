@@ -80,11 +80,21 @@ class Resolver(private val interpreter: Interpreter) : Expr.Visitor<Unit>, Stmt.
         expr.arguments.forEach(::resolve)
     }
 
+    override fun visitGetExpr(expr: Get) {
+        resolve(expr.obj)
+    }
+
     override fun visitGroupingExpr(expr: Grouping) {
         resolve(expr.expression)
     }
 
     override fun visitLiteralExpr(expr: Literal) {
+        // Nothing to do.
+    }
+
+    override fun visitSetExpr(expr: Set) {
+        resolve(expr.value)
+        resolve(expr.obj)
     }
 
     override fun visitLogicalExpr(expr: Logical) {
@@ -108,6 +118,11 @@ class Resolver(private val interpreter: Interpreter) : Expr.Visitor<Unit>, Stmt.
         beginScope()
         resolve(stmt.statements)
         endScope()
+    }
+
+    override fun visitClassStmt(stmt: Class) {
+        declare(stmt.name)
+        define(stmt.name)
     }
 
     override fun visitExpressionStmt(stmt: Expression) {

@@ -19,12 +19,20 @@ class AstPrinter : Expr.Visitor<String>, Stmt.Visitor<String> {
         return parenthesize("call", expr.callee, *expr.arguments.toTypedArray())
     }
 
+    override fun visitGetExpr(expr: Get): String {
+        TODO("Not yet implemented")
+    }
+
     override fun visitGroupingExpr(expr: Grouping): String {
         return parenthesize("group", expr.expression)
     }
 
     override fun visitLiteralExpr(expr: Literal): String {
         return expr.value?.toString() ?: "nil"
+    }
+
+    override fun visitSetExpr(expr: Set): String {
+        TODO("Not yet implemented")
     }
 
     override fun visitLogicalExpr(expr: Logical): String {
@@ -49,6 +57,10 @@ class AstPrinter : Expr.Visitor<String>, Stmt.Visitor<String> {
             append(")")
             toString()
         }
+    }
+
+    override fun visitClassStmt(stmt: Class): String {
+        TODO("Not yet implemented")
     }
 
     override fun visitExpressionStmt(stmt: Expression): String {

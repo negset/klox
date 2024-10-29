@@ -8,8 +8,10 @@ sealed interface Expr {
         fun visitAssignExpr(expr: Assign): R
         fun visitBinaryExpr(expr: Binary): R
         fun visitCallExpr(expr: Call): R
+        fun visitGetExpr(expr: Get): R
         fun visitGroupingExpr(expr: Grouping): R
         fun visitLiteralExpr(expr: Literal): R
+        fun visitSetExpr(expr: Set): R
         fun visitLogicalExpr(expr: Logical): R
         fun visitUnaryExpr(expr: Unary): R
         fun visitVariableExpr(expr: Variable): R
@@ -34,6 +36,12 @@ class Call(val callee: Expr, val paren: Token, val arguments: List<Expr>) : Expr
     }
 }
 
+class Get(val obj: Expr, val name: Token) : Expr {
+    override fun <R> accept(visitor: Expr.Visitor<R>): R {
+        return visitor.visitGetExpr(this)
+    }
+}
+
 class Grouping(val expression: Expr) : Expr {
     override fun <R> accept(visitor: Expr.Visitor<R>): R {
         return visitor.visitGroupingExpr(this)
@@ -43,6 +51,12 @@ class Grouping(val expression: Expr) : Expr {
 class Literal(val value: Any?) : Expr {
     override fun <R> accept(visitor: Expr.Visitor<R>): R {
         return visitor.visitLiteralExpr(this)
+    }
+}
+
+class Set(val obj: Expr, val name: Token, val value: Expr) : Expr {
+    override fun <R> accept(visitor: Expr.Visitor<R>): R {
+        return visitor.visitSetExpr(this)
     }
 }
 
