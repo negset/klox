@@ -5,7 +5,7 @@ class LoxFunction(private val declaration: Function, private val closure: Enviro
 
     override fun call(interpreter: Interpreter, arguments: List<Any?>): Any? {
         val environment = Environment(closure).apply {
-            (0..<arity).forEach {
+            repeat(arity) {
                 define(declaration.params[it].lexeme, arguments[it])
             }
         }

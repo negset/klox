@@ -5,6 +5,7 @@ import com.negset.klox.TokenType.*
 class Interpreter : Expr.Visitor<Any?>, Stmt.Visitor<Unit> {
     val globals = Environment()
     private var environment = globals
+    private val locals = mutableMapOf<Expr, Int>()
 
     init {
         globals.define("clock", object : LoxCallable {
@@ -28,7 +29,13 @@ class Interpreter : Expr.Visitor<Any?>, Stmt.Visitor<Unit> {
 
     override fun visitAssignExpr(expr: Assign): Any? {
         val value = evaluate(expr.value)
-        environment.assign(expr.name, value)
+
+        val distance = locals[expr]
+        if (distance == null) {
+            globals.assign(expr.name, value)
+        } else {
+            environment.assignAt(distance, expr.name, value)
+        }
         return value
     }
 
@@ -135,7 +142,16 @@ class Interpreter : Expr.Visitor<Any?>, Stmt.Visitor<Unit> {
     }
 
     override fun visitVariableExpr(expr: Variable): Any? {
-        return environment.get(expr.name)
+        return lookUpVariable(expr.name, expr)
+    }
+
+    private fun lookUpVariable(name: Token, expr: Expr): Any? {
+        val distance = locals[expr]
+        return if (distance == null) {
+            globals.get(name)
+        } else {
+            environment.getAt(distance, name.lexeme)
+        }
     }
 
     private fun evaluate(expr: Expr): Any? {
@@ -220,5 +236,9 @@ class Interpreter : Expr.Visitor<Any?>, Stmt.Visitor<Unit> {
         } finally {
             this.environment = previous
         }
+    }
+
+    fun resolve(expr: Expr, distance: Int) {
+        locals += expr to distance
     }
 }
