@@ -18,11 +18,9 @@ class Resolver(private val interpreter: Interpreter) : Expr.Visitor<Unit>, Stmt.
         expr.accept(this)
     }
 
-    private fun beginScope() {
+    private fun scope(inScope: () -> Unit) {
         scopes += mutableMapOf()
-    }
-
-    private fun endScope() {
+        inScope()
         scopes.removeLast()
     }
 
@@ -54,13 +52,13 @@ class Resolver(private val interpreter: Interpreter) : Expr.Visitor<Unit>, Stmt.
         val enclosingFunction = currentFunction
         currentFunction = type
 
-        beginScope()
-        function.params.forEach {
-            declare(it)
-            define(it)
+        scope {
+            function.params.forEach {
+                declare(it)
+                define(it)
+            }
+            resolve(function.body)
         }
-        resolve(function.body)
-        endScope()
 
         currentFunction = enclosingFunction
     }
@@ -115,9 +113,9 @@ class Resolver(private val interpreter: Interpreter) : Expr.Visitor<Unit>, Stmt.
     }
 
     override fun visitBlockStmt(stmt: Block) {
-        beginScope()
-        resolve(stmt.statements)
-        endScope()
+        scope {
+            resolve(stmt.statements)
+        }
     }
 
     override fun visitClassStmt(stmt: Class) {
