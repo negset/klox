@@ -148,6 +148,10 @@ class Interpreter : Expr.Visitor<Any?>, Stmt.Visitor<Unit> {
         return evaluate(expr.right)
     }
 
+    override fun visitThisExpr(expr: This): Any? {
+        return lookUpVariable(expr.keyword, expr)
+    }
+
     override fun visitUnaryExpr(expr: Unary): Any? {
         val right = evaluate(expr.right)
 
@@ -209,7 +213,13 @@ class Interpreter : Expr.Visitor<Any?>, Stmt.Visitor<Unit> {
 
     override fun visitClassStmt(stmt: Class) {
         environment.define(stmt.name.lexeme, null)
-        val cls = LoxClass(stmt.name.lexeme)
+
+        val methods = stmt.methods.associate {
+            val function = LoxFunction(it, environment, it.name.lexeme == "init")
+            it.name.lexeme to function
+        }
+
+        val cls = LoxClass(stmt.name.lexeme, methods)
         environment.assign(stmt.name, cls)
     }
 
@@ -218,7 +228,7 @@ class Interpreter : Expr.Visitor<Any?>, Stmt.Visitor<Unit> {
     }
 
     override fun visitFunctionStmt(stmt: Function) {
-        val function = LoxFunction(stmt, environment)
+        val function = LoxFunction(stmt, environment, false)
         environment.define(stmt.name.lexeme, function)
     }
 

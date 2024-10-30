@@ -183,6 +183,7 @@ class Parser(private val tokens: List<Token>) {
                 is Variable -> {
                     return Assign(expr.name, value)
                 }
+
                 is Get -> {
                     return Set(expr.obj, expr.name, value)
                 }
@@ -283,10 +284,12 @@ class Parser(private val tokens: List<Token>) {
                 match(LEFT_PAREN) -> {
                     expr = finishCall(expr)
                 }
+
                 match(DOT) -> {
                     val name = consume(IDENTIFIER, "Expect property name after '.'.")
                     expr = Get(expr, name)
                 }
+
                 else -> {
                     break
                 }
@@ -320,6 +323,8 @@ class Parser(private val tokens: List<Token>) {
             match(NIL) -> Literal(null)
 
             match(NUMBER, STRING) -> Literal(previous().literal)
+
+            match(THIS) -> This(previous())
 
             match(IDENTIFIER) -> Variable(previous())
 

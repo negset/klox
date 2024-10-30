@@ -1,10 +1,16 @@
-var a = "global";
-{
-    fun showA() {
-        print a;
+class Person {
+    init(name) {
+        this.name = name;
     }
 
-    showA();    // global
-    var a = "block";
-    showA();    // block  (<- global を期待)
+    greet(target) {
+        print "Hello " + target + "!";
+        print "I'm " + this.name + ".";
+    }
 }
+
+var john = Person("John");
+john.greet("World");
+
+var jane = john.init("Jane");
+jane.greet("Universe");

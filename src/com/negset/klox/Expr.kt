@@ -13,6 +13,7 @@ sealed interface Expr {
         fun visitLiteralExpr(expr: Literal): R
         fun visitSetExpr(expr: Set): R
         fun visitLogicalExpr(expr: Logical): R
+        fun visitThisExpr(expr: This): R
         fun visitUnaryExpr(expr: Unary): R
         fun visitVariableExpr(expr: Variable): R
     }
@@ -63,6 +64,12 @@ class Set(val obj: Expr, val name: Token, val value: Expr) : Expr {
 class Logical(val left: Expr, val operator: Token, val right: Expr) : Expr {
     override fun <R> accept(visitor: Expr.Visitor<R>): R {
         return visitor.visitLogicalExpr(this)
+    }
+}
+
+class This(val keyword: Token) : Expr {
+    override fun <R> accept(visitor: Expr.Visitor<R>): R {
+        return visitor.visitThisExpr(this)
     }
 }
 

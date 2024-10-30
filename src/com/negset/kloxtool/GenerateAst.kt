@@ -22,6 +22,7 @@ fun main(args: Array<String>) {
             "Literal  | value: Any?",
             "Set      | obj: Expr, name: Token, value: Expr",
             "Logical  | left: Expr, operator: Token, right: Expr",
+            "This     | keyword: Token",
             "Unary    | operator: Token, right: Expr",
             "Variable | name: Token",
         )

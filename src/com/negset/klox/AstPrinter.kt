@@ -20,7 +20,7 @@ class AstPrinter : Expr.Visitor<String>, Stmt.Visitor<String> {
     }
 
     override fun visitGetExpr(expr: Get): String {
-        TODO("Not yet implemented")
+        return parenthesize("get ${expr.name.lexeme} of", expr.obj)
     }
 
     override fun visitGroupingExpr(expr: Grouping): String {
@@ -32,11 +32,15 @@ class AstPrinter : Expr.Visitor<String>, Stmt.Visitor<String> {
     }
 
     override fun visitSetExpr(expr: Set): String {
-        TODO("Not yet implemented")
+        return parenthesize("set ${expr.name.lexeme} of", expr.obj, expr.value)
     }
 
     override fun visitLogicalExpr(expr: Logical): String {
         return parenthesize(expr.operator.lexeme, expr.left, expr.right)
+    }
+
+    override fun visitThisExpr(expr: This): String {
+        return "this"
     }
 
     override fun visitUnaryExpr(expr: Unary): String {
@@ -54,13 +58,18 @@ class AstPrinter : Expr.Visitor<String>, Stmt.Visitor<String> {
                 append(it.accept(this@AstPrinter))
                 append("\n")
             }
-            append(")")
+            append(")\n")
             toString()
         }
     }
 
     override fun visitClassStmt(stmt: Class): String {
-        TODO("Not yet implemented")
+        return StringBuilder().run {
+            append("(class ${stmt.name.lexeme}\n")
+            stmt.methods.forEach { append(it.accept(this@AstPrinter)) }
+            append(")\n")
+            toString()
+        }
     }
 
     override fun visitExpressionStmt(stmt: Expression): String {
@@ -73,7 +82,7 @@ class AstPrinter : Expr.Visitor<String>, Stmt.Visitor<String> {
             stmt.params.forEach { append(it.lexeme + " ") }
             append("\n")
             stmt.body.forEach { append(it.accept(this@AstPrinter) + "\n") }
-            append(")")
+            append(")\n")
             toString()
         }
     }
