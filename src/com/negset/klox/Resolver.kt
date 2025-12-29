@@ -6,7 +6,7 @@ class Resolver(private val interpreter: Interpreter) : Expr.Visitor<Unit>, Stmt.
     private var currentClass = ClassType.NONE
 
     private enum class FunctionType { NONE, FUNCTION, INITIALIZER, METHOD }
-    private enum class ClassType { NONE, CLASS }
+    private enum class ClassType { NONE, CLASS, SUBCLASS }
 
     fun resolve(statements: List<Stmt>) {
         statements.forEach(::resolve)
@@ -97,6 +97,12 @@ class Resolver(private val interpreter: Interpreter) : Expr.Visitor<Unit>, Stmt.
         resolve(expr.obj)
     }
 
+    override fun visitSuperExpr(expr: Super) = when (currentClass) {
+        ClassType.NONE -> loxError(expr.keyword, "Can't use 'super' outside of a class.")
+        ClassType.CLASS -> loxError(expr.keyword, "Can't use 'super' in a class with no superclass.")
+        ClassType.SUBCLASS -> resolveLocal(expr, expr.keyword)
+    }
+
     override fun visitLogicalExpr(expr: Logical) {
         resolve(expr.left)
         resolve(expr.right)
@@ -136,7 +142,16 @@ class Resolver(private val interpreter: Interpreter) : Expr.Visitor<Unit>, Stmt.
         declare(stmt.name)
         define(stmt.name)
 
-        scope {
+        stmt.superclass?.takeIf { it.name.lexeme == stmt.name.lexeme }?.run {
+            loxError(name, "A class can't inherit from itself.")
+        }
+
+        stmt.superclass?.let {
+            currentClass = ClassType.SUBCLASS
+            resolve(it)
+        }
+
+        fun resolveMethods() = scope {
             put("this", true)
             stmt.methods.forEach {
                 val declaration =
@@ -146,6 +161,15 @@ class Resolver(private val interpreter: Interpreter) : Expr.Visitor<Unit>, Stmt.
                         FunctionType.METHOD
 
                 resolveFunction(it, declaration)
+            }
+        }
+
+        if (stmt.superclass == null) {
+            resolveMethods()
+        } else {
+            scope {
+                put("super", true)
+                resolveMethods()
             }
         }
 

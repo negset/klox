@@ -35,6 +35,10 @@ class AstPrinter : Expr.Visitor<String>, Stmt.Visitor<String> {
         return parenthesize("set ${expr.name.lexeme} of", expr.obj, expr.value)
     }
 
+    override fun visitSuperExpr(expr: Super): String {
+        return "(${expr.method.lexeme} of ${expr.keyword.lexeme})"
+    }
+
     override fun visitLogicalExpr(expr: Logical): String {
         return parenthesize(expr.operator.lexeme, expr.left, expr.right)
     }

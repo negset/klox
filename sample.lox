@@ -1,16 +1,19 @@
-class Person {
-    init(name) {
-        this.name = name;
-    }
-
-    greet(target) {
-        print "Hello " + target + "!";
-        print "I'm " + this.name + ".";
+class A {
+    method() {
+        print "A method";
     }
 }
 
-var john = Person("John");
-john.greet("World");
+class B < A {
+    method() {
+        print "B method";
+    }
 
-var jane = john.init("Jane");
-jane.greet("Universe");
+    test() {
+        super.method();
+    }
+}
+
+class C < B {}
+
+C().test();

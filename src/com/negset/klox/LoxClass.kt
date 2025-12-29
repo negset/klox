@@ -1,6 +1,11 @@
 package com.negset.klox
 
-class LoxClass(val name: String, private val methods: Map<String, LoxFunction>) : LoxCallable {
+class LoxClass(
+    val name: String,
+    private val superclass: LoxClass?,
+    private val methods: Map<String, LoxFunction>
+) :
+    LoxCallable {
     override val arity: Int
         get() {
             val initiator = findMethod("init")
@@ -16,7 +21,7 @@ class LoxClass(val name: String, private val methods: Map<String, LoxFunction>) 
     }
 
     fun findMethod(name: String): LoxFunction? {
-        return methods[name]
+        return methods[name] ?: superclass?.findMethod(name)
     }
 
     override fun toString() = name
